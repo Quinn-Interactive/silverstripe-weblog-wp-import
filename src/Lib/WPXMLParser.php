@@ -53,6 +53,11 @@ class WPXMLParser
                         'URLSegment' => trim((string)$category['nicename']),
                         'Title' => trim(html_entity_decode((string)$category))
                     ]));
+                } elseif ($category['domain'] == 'post_tag') {
+                    $tags->push(ArrayData::create([
+                        'URLSegment' => trim((string) $category['nicename']),
+                        'Title' => trim(html_entity_decode((string) $category))
+                    ]));
                 }
             }
 

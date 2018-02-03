@@ -4,6 +4,7 @@ namespace Axllent\WeblogWPImport\Control;
 
 use Axllent\Weblog\Model\Blog;
 use Axllent\Weblog\Model\BlogCategory;
+use Axllent\Weblog\Model\BlogTag;
 use Axllent\Weblog\Model\BlogPost;
 use Axllent\WeblogWPImport\Lib\WPXMLParser;
 use GuzzleHttp\Client;
@@ -145,6 +146,13 @@ class ImportController extends Controller
             $options = array_reverse($options, true);
         }
 
+        /* Add option for importing BlogTag if it exists */
+        if (class_exists('Axllent\\Weblog\\Model\\BlogTag')) {
+            $options = array_reverse($options, true);
+            $options['tags'] = 'Import blog tags';
+            $options = array_reverse($options, true);
+        }
+
         if (BlogPost::get()->filter('ParentID', $this->getBlog()->ID)->Count()) {
             $options = array_reverse($options, true);
             $options['overwrite'] = 'Overwrite/update existing posts (matched by post URLSegment)';
@@ -212,7 +220,8 @@ class ImportController extends Controller
             return $this->redirectBack();
         }
 
-        $process_categories = !empty($data['WPImportOptions']['categories']) ? : false;
+        $process_categories = !empty($data['WPImportOptions']['categories']) ? true : false;
+        $process_tags = !empty($data['WPImportOptions']['tags']) ? true : false;
         $overwrite = !empty($data['WPImportOptions']['overwrite']) ? true : false;
         $remove_shortcodes = !empty($data['WPImportOptions']['remove_shortcodes']) ? true : false;
         $remove_styles_and_classes = !empty($data['WPImportOptions']['remove_styles_and_classes']) ? true : false;
@@ -239,6 +248,22 @@ class ImportController extends Controller
                 }
             }
             $status[] = $categories_created . ' categories created';
+        }
+
+        if ($process_tags) {
+            $tags_created = 0;
+            /* Check all tags exist */
+            foreach ($import->Tags as $import_tag) {
+                $tag = $blog->Tags()->filter('Title', $import_tag->Title)->first();
+                if (!$tag) {
+                    $tag = BlogTag::create([
+                        'Title' => $import_tag->Title
+                    ]);
+                    $blog->Tags()->add($tag);
+                    $tags_created++;
+                }
+            }
+            $status[] = $tags_created . ' tags created';
         }
 
         // Counters for form return
@@ -586,6 +611,19 @@ class ImportController extends Controller
                     }
                 }
             }
+
+            // Add tags
+            if ($process_tags) {
+                $tags = $orig->Tags;
+                foreach ($tags as $tag) {
+                    if (!$blog_post->Tags()->filter('Title', $tag->Title)->first()) {
+                        $tag_obj = $blog_post->Parent()->Tags()->filter('Title', $tag->Title)->first();
+                        if ($tag_obj->exists()) {
+                            $blog_post->Tags()->add($tag_obj);
+                        }
+                    }
+                }
+            }
         }
 
         $status[] = $blog_posts_added . ' posts added';
@@ -676,10 +714,25 @@ class ImportController extends Controller
             }
         }
 
+        $tags_lookup = [];
+        $tags = ArrayList::create();
+        foreach ($data->Posts as $post) {
+            foreach ($post->Tags as $tag) {
+                if (!isset($tags_lookup[$tag->URLSegment])) {
+                    $tags_lookup[$tag->URLSegment] = $tag->Title;
+                    $tags->push(ArrayData::create([
+                        'URLSegment' => $tag->URLSegment,
+                        'Title' => $tag->Title
+                    ]));
+                }
+            }
+        }
+
         return ArrayData::create([
             'SiteURL' => $data->SiteURL,
             'Posts' => $data->Posts->filter('Status', 'publish'),
-            'Categories' => $categories
+            'Categories' => $categories,
+            'Tags' => $tags,
         ]);
     }
 
