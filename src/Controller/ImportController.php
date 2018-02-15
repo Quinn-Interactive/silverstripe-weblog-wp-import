@@ -111,7 +111,7 @@ class ImportController extends Controller
         $ul->getValidator()->setAllowedExtensions(['xml']);
 
         $actions = new FieldList(
-            FormAction::create('SaveFile')->setTitle('Upload and analize WordPress XML file »')
+            FormAction::create('SaveFile')->setTitle('Upload and analyse WordPress XML file »')
         );
 
         $required = new RequiredFields('XMLFile');
