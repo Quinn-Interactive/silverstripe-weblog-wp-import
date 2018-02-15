@@ -27,3 +27,9 @@ td {
 .middleColumn .optionset.checkboxset label {
     font-weight: normal;
 }
+
+label {
+    display: inline-block;
+    font-weight: normal;
+    margin-left: .5rem
+}
