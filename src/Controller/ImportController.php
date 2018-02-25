@@ -597,7 +597,9 @@ class ImportController extends Controller
             }
 
             $blog_post->write();
-            $blog_post->doPublish();
+            if ($blog_post->Status == 'publish') {
+                $blog_post->doPublish();
+            }
 
             // Add categories
             if ($process_categories) {
@@ -730,7 +732,7 @@ class ImportController extends Controller
 
         return ArrayData::create([
             'SiteURL' => $data->SiteURL,
-            'Posts' => $data->Posts->filter('Status', 'publish'),
+            'Posts' => $data->Posts->filter('Status', ['publish', 'draft']),
             'Categories' => $categories,
             'Tags' => $tags,
         ]);
