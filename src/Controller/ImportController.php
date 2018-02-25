@@ -596,7 +596,12 @@ class ImportController extends Controller
                 }
             }
 
-            $blog_post->write();
+            try {
+                $blog_post->write();
+            } catch (InvalidArgumentException $e) {
+                $blog_post->PublishDate = new \DateTime();
+                $blog_post->write();
+            }
             if ($blog_post->Status == 'publish') {
                 $blog_post->doPublish();
             }
