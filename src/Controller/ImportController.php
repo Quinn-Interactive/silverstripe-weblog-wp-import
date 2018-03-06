@@ -591,8 +591,8 @@ class ImportController extends Controller
                         }
                     }
                 }
-
                 try {
+                    $blog_post->Created = $blog_post->PublishDate;
                     $blog_post->write();
                 } catch (InvalidArgumentException $e) {
                     $blog_post->PublishDate = new \DateTime();
